@@ -28,10 +28,10 @@ var getRandomArray = function (arr) {
 };
 
 var getApartments = function (count) {
-  var apartmentsArray = [];
+  var apartments = [];
 
   for (var i = 0; i < count; i++) {
-    apartmentsArray.push({
+    apartments.push({
       author: {
         avatar: AVATAR.path + (i + 1) + AVATAR.ext
       },
@@ -58,7 +58,7 @@ var getApartments = function (count) {
     );
   }
 
-  return apartmentsArray;
+  return apartments;
 };
 
 var renderPoint = function (apartment) {
