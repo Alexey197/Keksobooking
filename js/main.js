@@ -22,7 +22,6 @@ var mapWidth = mapPins.clientWidth;
 var templateCard = document.querySelector('#card').content.querySelector('.map__card');
 var popupPhotos = templateCard.querySelector('.popup__photos');
 var popupPhoto = popupPhotos.querySelector('.popup__photo');
-// var popupFeatures = templateCard.querySelectorAll('.popup__features');
 var mapFiltersContainer = document.querySelector('.map__filters-container');
 
 // Возвращает массив строк случайной длины
