@@ -16,20 +16,17 @@ var AVATAR = {path: 'img/avatars/user0', ext: '.png'};
 var PIN_SIZE = {width: 50, height: 70};
 
 var map = document.querySelector('.map');
+// var mapPin = map.querySelector('.map__pin--main');
 var templatePin = document.querySelector('#pin').content.querySelector('.map__pin');
 var mapPins = document.querySelector('.map__pins');
 var mapWidth = mapPins.clientWidth;
+// var mapFilters = document.querySelector('.map__filters');
 var templateCard = document.querySelector('#card').content.querySelector('.map__card');
 var popupPhotos = templateCard.querySelector('.popup__photos');
 var popupPhoto = popupPhotos.querySelector('.popup__photo');
 var mapFiltersContainer = document.querySelector('.map__filters-container');
-
-// Возвращает массив строк случайной длины
-var getRandomArray = function (arr) {
-  var startIndex = window.getRandomValue(0, arr.length - 1);
-  var endIndex = window.getRandomValue(startIndex, arr.length - 1);
-  return arr.slice(startIndex, endIndex + 1);
-};
+// var adForm = document.querySelector('.ad-form');
+// var formInputs = adForm.querySelectorAll('input, select');
 
 var getApartments = function (count) {
   var apartments = [];
@@ -37,26 +34,24 @@ var getApartments = function (count) {
   for (var i = 0; i < count; i++) {
     apartments.push({
       author: {
-        avatar: AVATAR.path + window.getRandomValue(1, USER_COUNT) + AVATAR.ext
+        avatar: AVATAR.path + window.utils.getRandomValue(1, USER_COUNT) + AVATAR.ext
       },
-
       offer: {
         title: 'Заголовок',
         address: '600, 350',
         price: 42,
-        type: TYPE_APARTMENTS[window.getRandomValue(0, TYPE_APARTMENTS.length - 1)],
-        rooms: window.getRandomValue(1, MAX_ROOMS),
-        guests: window.getRandomValue(1, MAX_GUESTS),
-        checkin: CHECK_TIME[window.getRandomValue(0, CHECK_TIME.length - 1)],
-        checkout: CHECK_TIME[window.getRandomValue(0, CHECK_TIME.length - 1)],
-        features: getRandomArray(FEATURES),
+        type: TYPE_APARTMENTS[window.utils.getRandomValue(0, TYPE_APARTMENTS.length - 1)],
+        rooms: window.utils.getRandomValue(1, MAX_ROOMS),
+        guests: window.utils.getRandomValue(1, MAX_GUESTS),
+        checkin: CHECK_TIME[window.utils.getRandomValue(0, CHECK_TIME.length - 1)],
+        checkout: CHECK_TIME[window.utils.getRandomValue(0, CHECK_TIME.length - 1)],
+        features: window.utils.getRandomArray(FEATURES),
         description: 'Описание',
-        photos: getRandomArray(PHOTOS)
+        photos: window.utils.getRandomArray(PHOTOS)
       },
-
       location: {
-        x: window.getRandomValue(10, mapWidth) - PIN_SIZE.width / 2,
-        y: window.getRandomValue(LOCATION_Y[0], LOCATION_Y[1]) - PIN_SIZE.height
+        x: window.utils.getRandomValue(10, mapWidth) - PIN_SIZE.width / 2,
+        y: window.utils.getRandomValue(LOCATION_Y[0], LOCATION_Y[1]) - PIN_SIZE.height
       }
     }
     );
@@ -64,6 +59,8 @@ var getApartments = function (count) {
 
   return apartments;
 };
+
+var ads = getApartments(USER_COUNT);
 
 var renderPoint = function (apartment) {
   var pointElement = templatePin.cloneNode(true);
@@ -74,15 +71,23 @@ var renderPoint = function (apartment) {
   return pointElement;
 };
 
-var createDOMPoints = function (count) {
-  var apartments = getApartments(USER_COUNT);
-  var fragment = document.createDocumentFragment();
-
-  for (var i = 0; i < count; i++) {
-    fragment.appendChild(renderPoint(apartments[i]));
+var fillFragment = function (array, fragment) {
+  for (var i = 0; i < array.length; i++) {
+    var newPin = renderPoint(array[i]);
+    newPin.value = i;
+    fragment.appendChild(newPin);
   }
   mapPins.appendChild(fragment);
 };
+
+var showAds = function () {
+  map.classList.remove('map--faded');
+
+  var fragment = document.createDocumentFragment();
+  fillFragment(ads, fragment);
+};
+
+showAds();
 
 var typeApartmentsTranslator = function (data) {
   var type = {
@@ -116,6 +121,7 @@ var createFeatures = function (features, arr) {
   });
 };
 
+// создание DOM-элемента карточки и наполнение ее контентом
 var cardApElement = function (apartment) {
   getRemoveChildren(popupPhotos);
   var fragment = document.createDocumentFragment();
@@ -136,18 +142,61 @@ var cardApElement = function (apartment) {
   return cardElement;
 };
 
-var createCardAd = function (card) {
-  var fragment = document.createDocumentFragment();
-  fragment.appendChild(cardApElement(card));
-  map.insertBefore(fragment, mapFiltersContainer);
+// создание коллекции карточек
+var createCardsCollection = function (arr) {
+  var cards = [];
+  for (var i = 0; i < arr.length; i++) {
+    cards[i] = cardApElement(arr[i]);
+  }
+  return cards;
 };
 
-var initApp = function () {
-  map.classList.remove('map--faded');
-  getApartments(USER_COUNT);
-  createDOMPoints(USER_COUNT);
-  var ads = getApartments(USER_COUNT);
-  createCardAd(ads[0]);
+// обработка показа и скрытия карточек
+var cards = createCardsCollection(ads);
+// переменная для открытой в настоящий момент карточки
+var currentCard;
+// вставляет переданную из массива карточку на карту, обзывает её текущей и вешает обработчики
+
+// обработчики нажатий
+// на ESC при открытой карточке
+var popupCloseEscHandler = function (evt) {
+  window.utils.isEscEvent(evt, closeCurrentCard);
 };
 
-initApp();
+var popupCloseClickHandler = function () {
+  closeCurrentCard();
+};
+
+var mapPinsClickHandler = function (evt) {
+  if (evt.target.classList.contains('map__pin') && !evt.target.classList.contains('map__pin--main')) {
+    showCard(cards[evt.target.value]);
+  }
+  if (evt.target.parentNode.classList.contains('map__pin') && !evt.target.parentNode.classList.contains('map__pin--main')) {
+    showCard(cards[evt.target.parentNode.value]);
+  }
+};
+
+var showCard = function (cardToShow) {
+  if (currentCard) {
+    closeCurrentCard();
+  }
+
+  map.insertBefore(cardToShow, mapFiltersContainer);
+  currentCard = cardToShow;
+
+  var popupCloseButton = currentCard.querySelector('.popup__close');
+  popupCloseButton.addEventListener('click', popupCloseClickHandler);
+  document.addEventListener('keydown', popupCloseEscHandler);
+};
+
+// удаляет из DOM открытую карточку, подчищает обработчики
+var closeCurrentCard = function () {
+  map.removeChild(currentCard);
+
+  var popupCloseButton = currentCard.querySelector('.popup__close');
+  popupCloseButton.removeEventListener('click', popupCloseClickHandler);
+  document.removeEventListener('keydown', popupCloseEscHandler);
+  currentCard = '';
+};
+
+mapPins.addEventListener('click', mapPinsClickHandler);
