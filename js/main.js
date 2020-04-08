@@ -14,19 +14,16 @@ var MAX_GUESTS = 10;
 var LOCATION_Y = [130, 630];
 var AVATAR = {path: 'img/avatars/user0', ext: '.png'};
 var PIN_SIZE = {width: 50, height: 70};
+var MAIN_PIN_WIDTH = 65;
+var MAIN_PIN_HEIGHT = 65 + 22 - 6; // button + ::after - translate
 
-var map = document.querySelector('.map');
-// var mapPin = map.querySelector('.map__pin--main');
 var templatePin = document.querySelector('#pin').content.querySelector('.map__pin');
 var mapPins = document.querySelector('.map__pins');
 var mapWidth = mapPins.clientWidth;
-// var mapFilters = document.querySelector('.map__filters');
 var templateCard = document.querySelector('#card').content.querySelector('.map__card');
 var popupPhotos = templateCard.querySelector('.popup__photos');
 var popupPhoto = popupPhotos.querySelector('.popup__photo');
 var mapFiltersContainer = document.querySelector('.map__filters-container');
-// var adForm = document.querySelector('.ad-form');
-// var formInputs = adForm.querySelectorAll('input, select');
 
 var getApartments = function (count) {
   var apartments = [];
@@ -87,7 +84,109 @@ var showAds = function () {
   fillFragment(ads, fragment);
 };
 
-showAds();
+// находим карту
+var map = document.querySelector('.map');
+
+// находим формы и поля ввода
+var adForm = document.querySelector('.ad-form');
+var formInputs = adForm.querySelectorAll('input, select');
+var mapFilters = document.querySelector('.map__filters');
+var addressInput = adForm.querySelector('#address');
+
+// главная метка
+var mapPinMain = map.querySelector('.map__pin--main');
+
+// отключение полей и селектов, затемнение карты и формы
+// флаг активации страницы
+var pageIsActive = false;
+
+var disablePage = function () {
+  map.classList.add('map--faded');
+  adForm.classList.add('ad-form--disabled');
+  mapFilters.classList.add('map__filters--disabled');
+  formInputs.forEach(function (item) {
+    item.disabled = true;
+  });
+
+  pageIsActive = false;
+};
+
+var activatePage = function () {
+  map.classList.remove('map--faded');
+  adForm.classList.remove('ad-form--disabled');
+  mapFilters.classList.remove('map__filters--disabled');
+  formInputs.forEach(function (item) {
+    item.disabled = false;
+  });
+
+  addressInput.readOnly = true;
+
+  pageIsActive = true;
+
+  showAds();
+};
+
+var getMainPinCoordinates = function () {
+  var mainPin = {
+    x: parseInt(mapPinMain.style.left.slice(0, -2), 10) + Math.round(MAIN_PIN_WIDTH / 2),
+    y: parseInt(mapPinMain.style.top.slice(0, -2), 10)
+  };
+
+  // если страница активна, y по острому концу, если нет - y в середине метки
+  mainPin.y += pageIsActive ? MAIN_PIN_HEIGHT : Math.round(mapPinMain.clientHeight / 2);
+
+  return mainPin;
+};
+
+var setAddress = function () {
+  var pin = getMainPinCoordinates();
+  addressInput.value = pin.x + ', ' + pin.y;
+};
+
+var mapPinMainMousedownHandler = function (evt) {
+  if (evt.button === 0) {
+    if (!pageIsActive) {
+      activatePage();
+    }
+    setAddress();
+  }
+};
+
+var mapPinMainEnterPresshandler = function (evt) {
+  if (!pageIsActive) {
+    window.utils.isEnterEvent(evt, activatePage);
+  }
+};
+
+mapPinMain.addEventListener('mousedown', mapPinMainMousedownHandler);
+mapPinMain.addEventListener('keydown', mapPinMainEnterPresshandler);
+
+var roomNumberSelect = adForm.querySelector('#room_number');
+var capacitySelect = adForm.querySelector('#capacity');
+
+disablePage();
+setAddress();
+
+var validateCapacity = function () {
+  capacitySelect.setCustomValidity('');
+
+  if (roomNumberSelect.value === '100' && capacitySelect.value !== 0) {
+    capacitySelect.setCustomValidity('Нельзя заселиться во дворец');
+  }
+
+  if (parseInt(roomNumberSelect.value, 10) < capacitySelect.value) {
+    capacitySelect.setCustomValidity('Гостей не должно быть больше, чем комнат');
+  }
+};
+
+var formChangeHandler = function (evt) {
+  if (evt.target === capacitySelect || evt.target === roomNumberSelect) {
+    validateCapacity();
+  }
+};
+
+validateCapacity();
+adForm.addEventListener('change', formChangeHandler);
 
 var typeApartmentsTranslator = function (data) {
   var type = {
@@ -143,16 +242,16 @@ var cardApElement = function (apartment) {
 };
 
 // создание коллекции карточек
-var createCardsCollection = function (arr) {
+var createCardsCollection = function () {
   var cards = [];
-  for (var i = 0; i < arr.length; i++) {
-    cards[i] = cardApElement(arr[i]);
+  for (var i = 0; i < ads.length; i++) {
+    cards[i] = cardApElement(ads[i]);
   }
   return cards;
 };
 
 // обработка показа и скрытия карточек
-var cards = createCardsCollection(ads);
+var cards = createCardsCollection();
 // переменная для открытой в настоящий момент карточки
 var currentCard;
 // вставляет переданную из массива карточку на карту, обзывает её текущей и вешает обработчики
