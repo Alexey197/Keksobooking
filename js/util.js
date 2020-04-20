@@ -16,9 +16,15 @@
     return arr.slice(startIndex, endIndex + 1);
   };
 
+  var getRandomValue = function (min, max) {
+    var rand = min + Math.random() * (max + 1 - min);
+    return Math.floor(rand);
+  };
+
   window.utils = {
     randomInteger: getRandomInteger,
     randomArray: getRandomArray,
+    randomValue: getRandomValue,
     isEscEvent: function (evt, action) {
       if (evt.keyCode === ESC_KEYCODE) {
         action();

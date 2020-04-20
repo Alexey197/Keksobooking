@@ -42,12 +42,6 @@
     };
   };
 
-  // var getRandomInteger = function (max, min) {
-  //   min = min ? Math.ceil(min) : 0;
-  //   max = Math.floor(max);
-  //   return Math.floor(Math.random() * (max - min + 1)) + min;
-  // };
-
   var generateAvatarLinks = function (amount) {
     var notChosen = []; // массив с цифрами от 0 до amount-1 для генерации неповторяющихся адресов картинок аватарок
     var avatarLinks = [];
@@ -67,6 +61,12 @@
     }
 
     return avatarLinks;
+  };
+
+  var getRandomArray = function (arr) {
+    var startIndex = window.utils.randomValue(0, arr.length - 1);
+    var endIndex = window.utils.randomValue(startIndex, arr.length - 1);
+    return arr.slice(startIndex, endIndex + 1);
   };
 
   var getApartments = function (count) {
@@ -89,7 +89,7 @@
           checkout: CHECK_TIME[window.utils.randomInteger(0, CHECK_TIME.length - 1)],
           features: window.utils.randomArray(FEATURES),
           description: window.utils.randomArray(ADS_DESCRIPTIONS),
-          photos: window.utils.randomArray(PHOTOS)
+          photos: getRandomArray(PHOTOS)
         },
         location: {
           x: window.utils.randomInteger(10, mapWidth) - PIN_SIZE.width / 2,

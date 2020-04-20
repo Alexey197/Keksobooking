@@ -86,7 +86,6 @@
   mapPinMain.addEventListener('keydown', mapPinMainEnterPresshandler);
 
   // переменная для открытой в настоящий момент карточки
-  var cards = window.cards;
   var currentCard;
   // вставляет переданную из массива карточку на карту, обзывает её текущей и вешает обработчики
 
@@ -102,10 +101,10 @@
 
   var mapPinsClickHandler = function (evt) {
     if (evt.target.classList.contains('map__pin') && !evt.target.classList.contains('map__pin--main')) {
-      showCard(cards[evt.target.value]);
+      showCard(window.cards[evt.target.value]);
     }
     if (evt.target.parentNode.classList.contains('map__pin') && !evt.target.parentNode.classList.contains('map__pin--main')) {
-      showCard(cards[evt.target.parentNode.value]);
+      showCard(window.cards[evt.target.parentNode.value]);
     }
   };
 
